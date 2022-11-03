@@ -1,10 +1,13 @@
 package com.example.project.service;
 
+import com.example.project.entity.Role;
 import com.example.project.entity.User;
+import com.example.project.repo.RoleRepo;
 import com.example.project.repo.UserRepo;
 import com.example.project.util.Utils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -13,11 +16,19 @@ import java.util.Optional;
 
 @Component
 public class UserService {
-    @Autowired
     private UserRepo userRepo;
+    private RoleRepo roleRepo;
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Autowired
+    public UserService(UserRepo userRepo, RoleRepo roleRepo, BCryptPasswordEncoder bCryptPasswordEncoder) {
+        this.userRepo = userRepo;
+        this.roleRepo = roleRepo;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+    }
 
     public User createUser(User user) {
-
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         User savedUser = userRepo.save(user);
         return savedUser;
     }
@@ -56,5 +67,15 @@ public class UserService {
         if (savedUser.isPresent())
             return savedUser.get();
         return user;
+    }
+
+    public Role saveRole(Role role) {
+        return roleRepo.save(role);
+    }
+
+    public void assignRole(String email, String roleName) {
+        User user = userRepo.findUserByEmail(email);
+        Role role = roleRepo.findRoleByName(roleName);
+        user.getRoles().add(role);
     }
 }
