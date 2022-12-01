@@ -5,20 +5,41 @@ import com.example.project.entity.User;
 import com.example.project.repo.RoleRepo;
 import com.example.project.repo.UserRepo;
 import com.example.project.util.Utils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-@Component
-public class UserService {
+@Service
+public class UserService implements UserDetailsService {
     private UserRepo userRepo;
     private RoleRepo roleRepo;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepo.findUserByEmail(email);
+        if(user == null) {
+            throw new UsernameNotFoundException("User not found in the database");
+        }
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        user.getRoles().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        });
+
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
+    }
 
     @Autowired
     public UserService(UserRepo userRepo, RoleRepo roleRepo, BCryptPasswordEncoder bCryptPasswordEncoder) {
@@ -76,6 +97,7 @@ public class UserService {
     public void assignRole(String email, String roleName) {
         User user = userRepo.findUserByEmail(email);
         Role role = roleRepo.findRoleByName(roleName);
+        System.out.println(roleName);
         user.getRoles().add(role);
     }
 }
