@@ -30,6 +30,7 @@ public class MyAuthorizationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (request.getServletPath().equals("/api/users/login")){
+            System.out.println("aaaaaaaa");
             filterChain.doFilter(request,response);
         } else {
             String authHeader = request.getHeader(AUTHORIZATION);

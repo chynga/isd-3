@@ -40,9 +40,15 @@ public class UserController {
         return ResponseEntity.created(uri).body(userService.createUser(user));
     }
 
-    @PostMapping ("role/assign-to-user")
-    public ResponseEntity<?> assignRole(@RequestBody RoleToUser roleToUser){
-        userService.assignRole(roleToUser.getEmail(), roleToUser.getRoleName());
-        return ResponseEntity.ok().build();
+    @DeleteMapping("users/{id}")
+    public ResponseEntity<?> deleteUser(@RequestBody User user) {
+        userService.deleteUser(user.getId());
+        return ResponseEntity.ok().body(user);
+    }
+
+    @PostMapping("roles/save")
+    public ResponseEntity<Role> saveRole(@RequestBody Role role) {
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/roles/save").toUriString());
+        return ResponseEntity.created(uri).body(userService.saveRole(role));
     }
 }

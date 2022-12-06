@@ -11,14 +11,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -27,9 +27,26 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final UserDetailsService userDetailsService;
+
+    private static final String[] SWAGGER_URLS = {
+            // -- swagger ui
+            "/swagger-resources/**",
+            "/swagger-ui.html",
+            "/v2/api-docs",
+            "/webjars/**",
+            "/configuration/ui",
+            "/configuration/security"
+
+    };
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder);
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers(SWAGGER_URLS);
     }
 
     @Override
@@ -40,12 +57,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().antMatchers("/api/users/login/**").permitAll();
         http.authorizeRequests().antMatchers("/api/users/register/**").permitAll();
-        http.authorizeRequests().antMatchers(GET,"/api/users").
-                hasAnyAuthority("ADMIN");
-        http.authorizeRequests().antMatchers(GET,"/api/users/**").
-                hasAnyAuthority("USER", "ADMIN");
-        http.authorizeRequests().antMatchers(POST,"/role/assign-to-user").
-                hasAnyAuthority("ADMIN");
+//        http.authorizeRequests().antMatchers("/swagger-ui.html").permitAll();
+        http.authorizeRequests().antMatchers(GET,"/api/users")
+                .hasAnyAuthority("ADMIN");
+        http.authorizeRequests().antMatchers(GET,"/api/users/**")
+                .hasAnyAuthority("USER", "ADMIN");
+        http.authorizeRequests().antMatchers(DELETE, "/api/users/**")
+                .hasAnyAuthority("ADMIN");
+        http.authorizeRequests().antMatchers(POST, "/api/roles/save")
+                .hasAnyAuthority("ADMIN");
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(myAuthenticationFilter);
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
